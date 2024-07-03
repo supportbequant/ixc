@@ -140,6 +140,15 @@ class Ixc(BillingSync):
       data["policies"].append(policy)
 
     # Create dictionaries for searchable lists to speed up processing
+    radusuariosDct = {}
+    for x in radusuarios:
+      if x["ip"] in radusuariosDct:
+        self.logger.warning("IP address %s already in subscriber %s, subscriber %s ignored" % \
+                            (x["ip"], radusuariosDct[x["ip"]]["login"], x["login"]))
+      elif not x["ip"] or rdu['online'] != 'S':
+        self.logger.warning("Subscriber %s not online, ignored" % x["login"])
+      else:
+        radusuariosDct[x["ip"]] = x
     radgruposDct = {}
     for x in radgrupos:
       radgruposDct[x["id"]] = x
@@ -147,12 +156,8 @@ class Ixc(BillingSync):
     for x in contratos:
       contratosDct[x["id"]] = x
 
-    for rdu in radusuarios:
-      # If no IP or not online, it makes no sense to continue
-      if not "ip" in rdu or rdu['online'] != 'S':
-        self.logger.warning("Subscriber %s not online, ignored" % rdu["login"])
-        continue
-  
+    for key in radusuariosDct:
+      rdu = radusuariosDct[key]
       subscriber = {} 
       subscriber["subscriberIp"] = rdu['ip']
       subscriber["subscriberId"] = rdu['login']
