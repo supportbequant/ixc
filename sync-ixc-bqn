@@ -19,6 +19,7 @@ import argparse
 import re
 import datetime
 import base64
+import sys
 
 import requests
 if not requests.__version__.startswith("1."):
@@ -104,6 +105,8 @@ class Ixc(BillingSync):
       id_grupo -> radgrupo.id
       ip: ipv4 address
       pd_ipv6: ipv6 address (delegated prefix)
+      cidade: does not prevent IP overlaps. Not used.
+      id_concentrador: linked to NAS.
     
     radgrupos:
       id <- radusuarios.id_grupo
@@ -118,7 +121,8 @@ class Ixc(BillingSync):
       status_internet:
         Allowed status: A (ativo) and FA (Financieiro em atraso)
         Blocked status: rest. D (deactivado), CM (bloqueo manual), CA (bloqueo automarito), AA (Aguardando Assinatura)
-
+      cidade: does not reliably locate the subscriber. Not used.
+    
     clientes:
       id <- radusuarios.id_cliente
       razao: customer name
@@ -141,20 +145,31 @@ class Ixc(BillingSync):
 
     # Create dictionaries for searchable lists to speed up processing
     radusuariosDct = {}
-    for x in radusuarios:
-      if x["ip"] in radusuariosDct:
-        self.logger.warning("IP address %s already in subscriber %s, subscriber %s ignored" % \
-                            (x["ip"], radusuariosDct[x["ip"]]["login"], x["login"]))
-      elif not x["ip"] or rdu['online'] != 'S':
-        self.logger.warning("Subscriber %s not online, ignored" % x["login"])
-      else:
-        radusuariosDct[x["ip"]] = x
+    overlaps = []
+    if radusuarios:
+      for x in radusuarios:
+        if x["ip"] in radusuariosDct:
+          # IP collision. Ignore BOTH subscribers to avoid conflicts in policies
+          # (we've seen overlaps with different plans)
+          self.logger.warning("IP address %s conflict in subscribers %s and %s. It will be ignored." % \
+                                      (x["ip"], radusuariosDct[x["ip"]]["login"], x["login"]))
+          
+          overlaps.append(x["ip"])
+        else:
+          radusuariosDct[x["ip"]] = x
+    # Remove the IPs with overalaps
+    for o in overlaps:
+      del radusuariosDct[o]
+
     radgruposDct = {}
-    for x in radgrupos:
-      radgruposDct[x["id"]] = x
+    if radgrupos:
+      for x in radgrupos:
+        radgruposDct[x["id"]] = x
+
     contratosDct = {}
-    for x in contratos:
-      contratosDct[x["id"]] = x
+    if contratos:
+      for x in contratos:
+        contratosDct[x["id"]] = x
 
     for key in radusuariosDct:
       rdu = radusuariosDct[key]
@@ -165,8 +180,8 @@ class Ixc(BillingSync):
       # Look for policy
       if not rdu['id_grupo'] in radgruposDct:
         # Subscriber has no associated policy (include cases of 'id_group' == '0').
-        self.logger.warning("Subscriber %s with unknown policy of name %s" % (rdu["login"], rdu['id_grupo']))
-        subscriber["policyRate"] = None
+        self.logger.warning("Subscriber %s with unknown policy of id %s" % (rdu["login"], rdu['id_grupo']))
+        subscriber["policyRate"] = "" # Empty will evaluate False in ifs and behaves bettder when printed
       else:
         subscriber["policyRate"] = radgruposDct[rdu['id_grupo']]['grupo']
 
@@ -236,23 +251,20 @@ if __name__ == "__main__":
 
   billingHost = args.billingHost.replace("https://", "")
 
+  #cidades = billingSync.getPagedEntries(billingHost, args.key, '/cidade', pageSize=args.pageSize, maxPages=args.maxPages)
+  #radpop = billingSync.getPagedEntries(billingHost, args.key, '/radpop', pageSize=args.pageSize, maxPages=args.maxPages)
+  #nas = billingSync.getPagedEntries(billingHost, args.key, '/radauth_nas', pageSize=args.pageSize, maxPages=args.maxPages)
+
   radusuarios = billingSync.getPagedEntries(billingHost, args.key, '/radusuarios', pageSize=args.pageSize, maxPages=args.maxPages,
-                                filter = {
-                                  'qtype': 'radusuarios.online',
-                                  'oper': '=',
-                                  'query': 'S'
-                                })
-  """
-  Alternative with advanced grid_param:
-   filter = {
-      'grid_param': [{"TB":"radusuarios.online", "OP":"=", "P":"S"}]
-    }
-  """
+                 filter = {
+                   'qtype': 'radusuarios.online'
+                  ,'oper': '='
+                  ,'query': 'S'
+                  #,'grid_param': '[{"TB":"radusuarios.cidade", "OP":"=", "P":"290"}]'
+              })
   radgrupos = billingSync.getPagedEntries(billingHost, args.key, '/radgrupos', pageSize=args.pageSize, maxPages=args.maxPages)
   contratos = billingSync.getPagedEntries(billingHost, args.key, '/cliente_contrato', pageSize=args.pageSize, maxPages=args.maxPages)
-
   billingSync.logger.warning("%s queries to billing completed" % datetime.datetime.now())
-
 
   data = billingSync.normalizeData(radusuarios, radgrupos, contratos, args.dualStack)
   billingSync.logger.warning("%s data normalization completed" % datetime.datetime.now())
