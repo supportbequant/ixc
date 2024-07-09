@@ -16,11 +16,11 @@ IXC_SERVER=myserver.ixc.com
 # REST API KEY of the IXC server
 IXC_KEY=apikey
 
+# Uncomment to synchronize every 15 minutes instead of 5
+# [ "`date +%M`" != "00" ] && [ "`date +%M`" != "15" ] && [ "`date +%M`" != "30" ] && [ "`date +%M`" != "45" ] && exit 0
+
 # Main part, do not modify
 #
-
-# Synchronize every 15 minutes and exit rest of the time
-[ "`date +%M`" != "00" ] && [ "`date +%M`" != "15" ] && [ "`date +%M`" != "30" ] && [ "`date +%M`" != "45" ] && exit 0
 
 cd /root/ixc
 ./sync-ixc-bqn -b ${BQN_OAM_IP} ${BQN_REST_USER} ${BQN_REST_PW} ${IXC_DUAL_STACK} --log-file /tmp/sync-ixc-bqn.log ${IXC_SERVER} ${IXC_KEY}
