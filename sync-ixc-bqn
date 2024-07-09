@@ -235,7 +235,7 @@ if __name__ == "__main__":
   parser.add_argument('-v', '--verbose', action='count', dest='verbose', default=0,
                     help="Display extra informationt (repeat for increased verbosity)")
   parser.add_argument('-ds', '--dual-stack', action='store_true', dest="dualStack", default=False, 
-      help='Group v4 and v6 IP addresses of some subscriber under same rate limit. If absent, no group created')
+      help='Group v4 and v6 IP addresses of same subscriber under same rate limit. Requires BQN R4.22 or later. If absent, no group created')
   parser.add_argument('-ps', '--page-size', default=10000, type=int, dest="pageSize", \
       help='Number of entries retrieved per page. 10000 by default (balance between speed and IXC server load)')
   parser.add_argument('-mp', '--max-pages', default=100, type=int, dest="maxPages", \
@@ -250,10 +250,6 @@ if __name__ == "__main__":
   billingSync.logger.warning("%s synchronization script starts (v1.0)" % datetime.datetime.now())
 
   billingHost = args.billingHost.replace("https://", "")
-
-  #cidades = billingSync.getPagedEntries(billingHost, args.key, '/cidade', pageSize=args.pageSize, maxPages=args.maxPages)
-  #radpop = billingSync.getPagedEntries(billingHost, args.key, '/radpop', pageSize=args.pageSize, maxPages=args.maxPages)
-  #nas = billingSync.getPagedEntries(billingHost, args.key, '/radauth_nas', pageSize=args.pageSize, maxPages=args.maxPages)
 
   radusuarios = billingSync.getPagedEntries(billingHost, args.key, '/radusuarios', pageSize=args.pageSize, maxPages=args.maxPages,
                  filter = {
