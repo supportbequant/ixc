@@ -61,9 +61,8 @@ scp ./ixc-main/BillingSync.py  ./ixc-main/sync-ixc-bqn ./ixc-main/sync-ixc-bqn.s
 6. Make sure the following files are executable in BQN:
 ```
 ssh root@<BQN-OAM-IP>
-cd ixc
 chmod a+x ./ixc/sync-ixc-bqn
-chnod a+x ./ixc/sync-ixc-bqn.sh
+chmod a+x ./ixc/sync-ixc-bqn.sh
 exit
 ```
 
@@ -111,8 +110,7 @@ that the sync-ixc-bqn.sh MUST NOT be updated.
 4. Make sure the following updated file remains executable in BQN:
 ```
 ssh root@<BQN-OAM-IP>
-cd ixc
-chmod a+x ./ixc-main/sync-ixc-bqn
+chmod a+x ./ixc/sync-ixc-bqn
 exit
 ```
 
