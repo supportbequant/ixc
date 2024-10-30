@@ -62,8 +62,8 @@ scp ./ixc-main/BillingSync.py  ./ixc-main/sync-ixc-bqn ./ixc-main/sync-ixc-bqn.s
 ```
 ssh root@<BQN-OAM-IP>
 cd ixc
-chmod a+x ./ixc-main/sync-ixc-bqn
-chnod a+x ./ixc-main/sync-ixc-bqn.sh
+chmod a+x ./ixc/sync-ixc-bqn
+chnod a+x ./ixc/sync-ixc-bqn.sh
 exit
 ```
 

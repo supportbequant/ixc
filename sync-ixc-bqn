@@ -241,7 +241,7 @@ if __name__ == "__main__":
   parser.add_argument('-mp', '--max-pages', default=100, type=int, dest="maxPages", \
       help='Maximum number of pages to retrieve per query. For test only (leads to partial synchronizations)')
   parser.add_argument('-lf', '--log-file', default=None, type=str, dest="logFile",
-      help='Log file to use. If absent, logs go to statd output')
+      help='Log file to use. If absent, logs go to the standard output')
   parser.add_argument('billingHost', metavar='IXC-HOST', type=str, help='IXC URL')
   parser.add_argument('key', metavar='API-KEY', type=str, help=' IXC REST API key')
   args = parser.parse_args()
