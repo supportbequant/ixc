@@ -15,8 +15,7 @@ using the IXC REST API and update the BQN server using the BQN REST API.
 
 3. BQN with a DNS server configured (see https://www.bequant.com/docs/initial-configuration#changing-the-management-ip-address).
 
-4. ixc with REST API enabled with access to both NMS and CRM. A common API KEY 
-for both types of access must be created.
+4. IXC with REST API enabled.
 
 ### Steps
 
