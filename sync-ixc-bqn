@@ -36,16 +36,23 @@ class Ixc(BillingSync):
   ############################################################################
 
   def getPagedEntries(self, server, key, query, pageSize=10000, maxPages=1000, filter=None):
+    # A bug in this version of requests library makes a POST to
+    # include a Content-Type: application/x-www-form-urlencoded
+    # which overrides application/json, despite sending a byte-encoded
+    # string.
+    # We do a work-around using a prepare requests via a session
+    # object.
     url =  "https://" + server + "/webservice/v1" + query
     credentials = base64.b64encode(key.encode("utf-8")).decode("utf-8")
     headers = {
-      "content-type": "application/json;charset=UTF-8",
       "Accept-Charset": "UTF-8",
       "Accept": "application/json",
       "Connection": "keep-alive",
       'ixcsoft': 'listar',
       "Authorization": "Basic %s" % credentials
     }
+    session = requests.Session()
+    session.verify = False
 
     page = 1
     remaining = True
@@ -59,9 +66,16 @@ class Ixc(BillingSync):
         queryJson[k] = filter[k]
 
     while remaining and page <= maxPages:
-      self.logger.info("POST to %s, page %d" % (url, page))
       queryJson['page'] = str(page)
-      rsp = requests.post(url, headers=headers,  data=self.jsonDumps(queryJson), verify=False)
+
+      req = requests.Request('POST', url, headers=headers, data=self.jsonDumps(queryJson))
+      preReq = req.prepare()
+      if "Content-Type" in preReq.headers:
+        del preReq.headers['Content-Type']
+      preReq.headers['Content-Type'] = "application/json;charset=UTF-8"
+
+      self.logger.info("POST to %s, page %d" % (url, page))
+      rsp = session.send(preReq)
       self.printResponseDetails(rsp)
       if rsp.status_code != 200:
         # We continue with one page error to allow for partial synchronizations, given the long
